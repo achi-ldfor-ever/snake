@@ -10,10 +10,11 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #333;
+            background-color: #ffccff;
         }
         canvas {
-            background-color: black;
+            background-color: #ff99cc;
+            border: 5px solid #ff66b2;
         }
     </style>
 </head>
@@ -27,6 +28,7 @@
         let snake = [{ x: 10 * box, y: 10 * box }];
         let direction = "RIGHT";
         let food = generateFood();
+        let game;
 
         document.addEventListener("keydown", changeDirection);
 
@@ -41,11 +43,11 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = "red";
+            ctx.fillStyle = "#ff3366";
             ctx.fillRect(food.x, food.y, box, box);
             
             for (let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = (i === 0) ? "lime" : "green";
+                ctx.fillStyle = (i === 0) ? "#ff0066" : "#ff3385";
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
             }
             
@@ -57,16 +59,20 @@
             if (direction === "RIGHT") snakeX += box;
             if (direction === "DOWN") snakeY += box;
             
+            const newHead = { x: snakeX, y: snakeY };
+            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                if (snake.length > 1) {
+                    snake.pop();
+                    snake = [{ x: 10 * box, y: 10 * box }];
+                    direction = "RIGHT";
+                }
+                return;
+            }
+            
             if (snakeX === food.x && snakeY === food.y) {
                 food = generateFood();
             } else {
                 snake.pop();
-            }
-            
-            const newHead = { x: snakeX, y: snakeY };
-            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                clearInterval(game);
-                alert("Game Over!");
             }
             
             snake.unshift(newHead);
@@ -88,7 +94,7 @@
             return false;
         }
 
-        let game = setInterval(draw, 100);
+        game = setInterval(draw, 100);
     </script>
 </body>
 </html>
