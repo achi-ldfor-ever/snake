@@ -26,10 +26,7 @@
         const box = 20;
         let snake = [{ x: 10 * box, y: 10 * box }];
         let direction = "RIGHT";
-        let food = {
-            x: Math.floor(Math.random() * 20) * box,
-            y: Math.floor(Math.random() * 20) * box
-        };
+        let food = generateFood();
 
         document.addEventListener("keydown", changeDirection);
 
@@ -61,10 +58,7 @@
             if (direction === "DOWN") snakeY += box;
             
             if (snakeX === food.x && snakeY === food.y) {
-                food = {
-                    x: Math.floor(Math.random() * 20) * box,
-                    y: Math.floor(Math.random() * 20) * box
-                };
+                food = generateFood();
             } else {
                 snake.pop();
             }
@@ -76,6 +70,13 @@
             }
             
             snake.unshift(newHead);
+        }
+
+        function generateFood() {
+            return {
+                x: Math.floor(Math.random() * 18 + 1) * box,
+                y: Math.floor(Math.random() * 18 + 1) * box
+            };
         }
 
         function collision(head, array) {
