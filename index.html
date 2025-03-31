@@ -30,6 +30,10 @@
             cursor: pointer;
             border-radius: 5px;
         }
+        .score {
+            font-size: 20px;
+            color: #ff0066;
+        }
     </style>
 </head>
 <body>
@@ -37,19 +41,22 @@
         <button onclick="pauseGame()">Pause</button>
         <button onclick="playGame()">Play</button>
     </div>
+    <div class="score">High Score: <span id="highScore">0</span></div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-
         const box = 20;
         let snake = [{ x: 10 * box, y: 10 * box }];
         let direction = "RIGHT";
         let food = generateFood();
+        let cherry = null;
         let game;
         let running = true;
+        let highScore = 0;
 
         document.addEventListener("keydown", changeDirection);
+        setInterval(spawnCherry, 10000);
 
         function changeDirection(event) {
             const key = event.keyCode;
@@ -62,9 +69,13 @@
         function draw() {
             if (!running) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             ctx.fillStyle = "yellow";
             ctx.fillRect(food.x, food.y, box, box);
+            
+            if (cherry) {
+                ctx.fillStyle = "red";
+                ctx.fillRect(cherry.x, cherry.y, box, box);
+            }
             
             for (let i = 0; i < snake.length; i++) {
                 ctx.fillStyle = (i === 0) ? "#ff0066" : "#ff3385";
@@ -89,8 +100,17 @@
             
             if (snakeX === food.x && snakeY === food.y) {
                 food = generateFood();
+                highScore++;
+                document.getElementById("highScore").innerText = highScore;
             } else {
                 snake.pop();
+            }
+            
+            if (cherry && snakeX === cherry.x && snakeY === cherry.y) {
+                for (let i = 0; i < 10; i++) {
+                    snake.push({});
+                }
+                cherry = null;
             }
             
             snake.unshift(newHead);
@@ -98,6 +118,13 @@
 
         function generateFood() {
             return {
+                x: Math.floor(Math.random() * 18 + 1) * box,
+                y: Math.floor(Math.random() * 18 + 1) * box
+            };
+        }
+
+        function spawnCherry() {
+            cherry = {
                 x: Math.floor(Math.random() * 18 + 1) * box,
                 y: Math.floor(Math.random() * 18 + 1) * box
             };
