@@ -3,151 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
+    <title>Maa's Puzzle Day ❤️</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --pink-primary: #ff69b4;
+            --pink-secondary: #ff1493;
+            --pink-bg: #fff0f5;
+        }
+
         body {
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            background: var(--pink-bg);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #ffccff;
         }
-        canvas {
-            background-color: #ff99cc;
-            border: 5px solid #ff66b2;
+
+        /* Pixel Art Animation */
+        .maa-character {
+            width: 64px;
+            height: 64px;
+            /* Replace this with your own sprite! */
+            background: url('https://i.imgur.com/8QfQk1g.png') 0 0; /* Example pixel art */
+            image-rendering: pixelated;
+            animation: walk 1s steps(4) infinite;
+            margin: 20px auto;
         }
-        .controls {
-            margin-bottom: 10px;
+
+        @keyframes walk {
+            from { background-position: 0 0; }
+            to { background-position: -256px 0; }
         }
-        button {
-            padding: 10px;
-            margin: 5px;
-            border: none;
-            background-color: #ff66b2;
-            color: white;
-            font-size: 16px;
+
+        .game-select {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .game-btn {
+            background: var(--pink-primary);
+            border: 3px solid var(--pink-secondary);
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2em;
             cursor: pointer;
-            border-radius: 5px;
+            color: #fff;
+            border-radius: 10px;
+            transition: transform 0.3s, background 0.2s;
         }
-        .score {
-            font-size: 20px;
-            color: #ff0066;
+
+        .game-btn:hover {
+            transform: scale(1.1);
+            background: var(--pink-secondary);
+        }
+
+        .game-container {
+            display: none;
+            padding: 20px;
+            position: relative;
+            text-align: center;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--pink-secondary);
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            z-index: 10;
+        }
+
+        /* Sudoku Grid */
+        .sudoku-grid {
+            border: 3px solid var(--pink-primary);
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        .sudoku-cell {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            border: 1px solid #ff99cc;
+            background: #fff8fb;
+            font-size: 1.2em;
+            font-family: inherit;
+        }
+
+        /* Kakuro Grid */
+        .kakuro-grid {
+            border: 2px solid var(--pink-primary);
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        .kakuro-cell {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            border: 1px solid #ff99cc;
+            background: #fff8fb;
+        }
+
+        /* Slitherlink Grid */
+        .slitherlink-grid {
+            background: #fff8fb;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+        }
+
+        .slitherlink-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--pink-primary);
+            border-radius: 50%;
+            position: absolute;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <button onclick="pauseGame()">Pause</button>
-        <button onclick="playGame()">Play</button>
+    <!-- Main Menu -->
+    <div class="game-select" id="main-menu">
+        <div class="maa-character"></div>
+        <h2>Happy Mother's Day, Maa! ❤️</h2>
+        <button class="game-btn" onclick="showGame('sudoku')">Sudoku</button>
+        <button class="game-btn" onclick="showGame('kakuro')">Kakuro</button>
+        <button class="game-btn" onclick="showGame('slitherlink')">Loop the Loop</button>
     </div>
-    <div class="score">High Score: <span id="highScore">0</span></div>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <!-- Sudoku Game -->
+    <div class="game-container" id="sudoku-game">
+        <button class="back-btn" onclick="showMainMenu()">← Back</button>
+        <h3>Sudoku</h3>
+        <table class="sudoku-grid"></table>
+    </div>
+
+    <!-- Kakuro Game -->
+    <div class="game-container" id="kakuro-game">
+        <button class="back-btn" onclick="showMainMenu()">← Back</button>
+        <h3>Kakuro</h3>
+        <table class="kakuro-grid"></table>
+    </div>
+
+    <!-- Slitherlink Game -->
+    <div class="game-container" id="slitherlink-game">
+        <button class="back-btn" onclick="showMainMenu()">← Back</button>
+        <h3>Loop the Loop (Slitherlink)</h3>
+        <div class="slitherlink-grid"></div>
+    </div>
+
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const box = 20;
-        let snake = [{ x: 10 * box, y: 10 * box }];
-        let direction = "RIGHT";
-        let food = generateFood();
-        let cherry = null;
-        let game;
-        let running = true;
-        let highScore = 0;
-
-        document.addEventListener("keydown", changeDirection);
-        setInterval(spawnCherry, 10000);
-
-        function changeDirection(event) {
-            const key = event.keyCode;
-            if (key === 37 && direction !== "RIGHT") direction = "LEFT";
-            else if (key === 38 && direction !== "DOWN") direction = "UP";
-            else if (key === 39 && direction !== "LEFT") direction = "RIGHT";
-            else if (key === 40 && direction !== "UP") direction = "DOWN";
+        // Game Navigation
+        function showGame(game) {
+            document.querySelectorAll('.game-container').forEach(el => el.style.display = 'none');
+            document.getElementById(`${game}-game`).style.display = 'block';
+            document.getElementById('main-menu').style.display = 'none';
+            initializeGame(game);
         }
 
-        function draw() {
-            if (!running) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(food.x, food.y, box, box);
-            
-            if (cherry) {
-                ctx.fillStyle = "red";
-                ctx.fillRect(cherry.x, cherry.y, box, box);
+        function showMainMenu() {
+            document.querySelectorAll('.game-container').forEach(el => el.style.display = 'none');
+            document.getElementById('main-menu').style.display = 'block';
+        }
+
+        // Game Initializers
+        function initializeGame(game) {
+            switch(game) {
+                case 'sudoku':
+                    initSudoku();
+                    break;
+                case 'kakuro':
+                    initKakuro();
+                    break;
+                case 'slitherlink':
+                    initSlitherlink();
+                    break;
             }
-            
-            for (let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = (i === 0) ? "#ff0066" : "#ff3385";
-                ctx.fillRect(snake[i].x, snake[i].y, box, box);
-            }
-            
-            let snakeX = snake[0].x;
-            let snakeY = snake[0].y;
-            
-            if (direction === "LEFT") snakeX -= box;
-            if (direction === "UP") snakeY -= box;
-            if (direction === "RIGHT") snakeX += box;
-            if (direction === "DOWN") snakeY += box;
-            
-            const newHead = { x: snakeX, y: snakeY };
-            if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                if (snake.length > 1) {
-                    snake.pop();
+        }
+
+        // Sudoku Implementation (simple 4x4 demo)
+        function initSudoku() {
+            const grid = document.querySelector('.sudoku-grid');
+            grid.innerHTML = '';
+            for(let r=0; r<4; r++) {
+                let row = document.createElement('tr');
+                for(let c=0; c<4; c++) {
+                    let cell = document.createElement('td');
+                    let input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.className = 'sudoku-cell';
+                    cell.appendChild(input);
+                    row.appendChild(cell);
                 }
-                return;
+                grid.appendChild(row);
             }
-            
-            if (snakeX === food.x && snakeY === food.y) {
-                food = generateFood();
-                highScore++;
-                document.getElementById("highScore").innerText = highScore;
-            } else {
-                snake.pop();
-            }
-            
-            if (cherry && snakeX === cherry.x && snakeY === cherry.y) {
-                for (let i = 0; i < 10; i++) {
-                    snake.push({});
+        }
+
+        // Kakuro Implementation (simple 3x3 demo)
+        function initKakuro() {
+            const grid = document.querySelector('.kakuro-grid');
+            grid.innerHTML = '';
+            for(let r=0; r<3; r++) {
+                let row = document.createElement('tr');
+                for(let c=0; c<3; c++) {
+                    let cell = document.createElement('td');
+                    cell.className = 'kakuro-cell';
+                    // For demo, leave blank or add clues as needed
+                    if((r === 0 && c === 0) || (r === 1 && c === 1)) {
+                        cell.style.background = '#ffb6c1';
+                    } else {
+                        let input = document.createElement('input');
+                        input.type = 'text';
+                        input.maxLength = 2;
+                        input.style.width = '90%';
+                        input.style.height = '90%';
+                        input.style.textAlign = 'center';
+                        input.style.fontSize = '1em';
+                        input.style.background = 'transparent';
+                        input.style.border = 'none';
+                        cell.appendChild(input);
+                    }
+                    row.appendChild(cell);
                 }
-                cherry = null;
+                grid.appendChild(row);
             }
-            
-            snake.unshift(newHead);
         }
 
-        function generateFood() {
-            return {
-                x: Math.floor(Math.random() * 18 + 1) * box,
-                y: Math.floor(Math.random() * 18 + 1) * box
-            };
-        }
-
-        function spawnCherry() {
-            cherry = {
-                x: Math.floor(Math.random() * 18 + 1) * box,
-                y: Math.floor(Math.random() * 18 + 1) * box
-            };
-        }
-
-        function collision(head, array) {
-            for (let i = 0; i < array.length; i++) {
-                if (head.x === array[i].x && head.y === array[i].y) {
-                    return true;
+        // Slitherlink Implementation (simple 3x3 demo)
+        function initSlitherlink() {
+            const grid = document.querySelector('.slitherlink-grid');
+            grid.innerHTML = '';
+            // For demo, just show a 3x3 grid of numbers
+            for(let r=0; r<3; r++) {
+                let row = document.createElement('div');
+                row.style.display = 'flex';
+                for(let c=0; c<3; c++) {
+                    let cell = document.createElement('div');
+                    cell.style.width = '40px';
+                    cell.style.height = '40px';
+                    cell.style.border = '1px solid #ff99cc';
+                    cell.style.display = 'flex';
+                    cell.style.alignItems = 'center';
+                    cell.style.justifyContent = 'center';
+                    cell.style.margin = '2px';
+                    cell.style.background = '#fff8fb';
+                    cell.textContent = Math.floor(Math.random()*4);
+                    row.appendChild(cell);
                 }
+                grid.appendChild(row);
             }
-            return false;
         }
 
-        function pauseGame() {
-            running = false;
-        }
-
-        function playGame() {
-            running = true;
-        }
-
-        game = setInterval(draw, 100);
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            // Optionally initialize something
+        });
     </script>
 </body>
 </html>
